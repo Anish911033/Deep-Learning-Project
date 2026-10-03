@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GlaS Gland Segmentation</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:900px;margin:2rem auto;padding:0 1rem;color:#222}
+.row{display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem}
+.card{flex:1;min-width:220px;text-align:center}
+img{max-width:100%;border:1px solid #ccc;border-radius:6px}
+button{padding:.6rem 1.2rem;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+button:disabled{opacity:.5}
+</style></head><body>
+<h1>Gland Segmentation (U-Net)</h1>
+<p>Upload a histology image (.bmp / .png / .jpg) to segment glands.</p>
+<input type="file" id="file" accept="image/*"> <button id="go">Segment</button>
+<p id="status"></p>
+<div class="row" id="out" hidden>
+  <div class="card"><h3>Overlay</h3><img id="ov"></div>
+  <div class="card"><h3>Mask</h3><img id="mk"></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+$("go").onclick=async()=>{
+  const f=$("file").files[0]; if(!f){$("status").textContent="Choose an image first.";return}
+  $("go").disabled=true; $("status").textContent="Running model… (first request can take ~30s)";
+  const fd=new FormData(); fd.append("image",f);
+  try{
+    const r=await fetch("/predict",{method:"POST",body:fd}); const d=await r.json();
+    if(!r.ok) throw new Error(d.error);
+    $("ov").src=d.overlay; $("mk").src=d.mask; $("out").hidden=false;
+    $("status").textContent="Gland coverage: "+d.gland_coverage+"%";
+  }catch(e){$("status").textContent="Error: "+e.message}
+  $("go").disabled=false;
+};
+</script></body></html>
